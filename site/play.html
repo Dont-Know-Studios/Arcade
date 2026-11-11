@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Play — Dont-Know-Studios Arcade</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="player">
+  <header class="bar">
+    <a class="btn ghost" href="./" aria-label="Back to the arcade">← Arcade</a>
+    <div class="now">
+      <strong id="title">Loading…</strong>
+      <span id="meta" class="muted"></span>
+    </div>
+    <div class="actions">
+      <a id="newtab" class="btn ghost" target="_blank" rel="noopener">Open in new tab</a>
+      <button id="fs" class="btn" type="button">Fullscreen</button>
+    </div>
+  </header>
+  <div class="stage">
+    <iframe id="frame" title="Game" allow="fullscreen; gamepad; autoplay; clipboard-write" allowfullscreen></iframe>
+    <p id="missing" class="status" hidden>That game isn't in the arcade. <a href="./">Back to all games</a>.</p>
+  </div>
+  <script src="play.js"></script>
+</body>
+</html>

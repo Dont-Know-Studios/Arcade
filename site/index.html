@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dont-Know-Studios Arcade</title>
+  <meta name="description" content="Play every released Dont-Know-Studios game in your browser.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">▶</span>
+      <div>
+        <h1>Dont-Know-Studios Arcade</h1>
+        <p class="tag">Every released game, playable in your browser.</p>
+      </div>
+    </div>
+    <label class="search">
+      <span class="sr">Search games</span>
+      <input id="q" type="search" placeholder="Search games…" autocomplete="off">
+    </label>
+  </header>
+
+  <main>
+    <p id="status" class="status">Loading games…</p>
+    <ul id="games" class="grid" aria-live="polite"></ul>
+  </main>
+
+  <footer class="foot">
+    <span id="updated"></span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

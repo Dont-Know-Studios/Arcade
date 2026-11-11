@@ -1,0 +1,78 @@
+# Publish the arcade: collect every studio game's newest web build and deploy
+# the site to GitHub Pages. See README.md.
+#
+# Uses the studio GitHub App (the same one the studio template uses) to read
+# the game repos, which may be private: variable TEMPLATE_APP_ID and secret
+# TEMPLATE_APP_PRIVATE_KEY, both set on THIS repo.
+name: Publish arcade
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"   # pick up new game releases every 30 minutes
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Check the studio GitHub App is set up
+        env:
+          APP_ID: ${{ vars.TEMPLATE_APP_CLIENT_ID || vars.TEMPLATE_APP_ID }}
+          APP_KEY: ${{ secrets.TEMPLATE_APP_PRIVATE_KEY }}
+        run: |
+          if [ -z "$APP_ID" ] || [ -z "$APP_KEY" ]; then
+            echo "::error::Set the variable TEMPLATE_APP_ID and the secret TEMPLATE_APP_PRIVATE_KEY on this repo (README.md, Setup)."
+            exit 1
+          fi
+
+      - name: Mint a token from the studio GitHub App
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.TEMPLATE_APP_CLIENT_ID || vars.TEMPLATE_APP_ID }}
+          private-key: ${{ secrets.TEMPLATE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+
+      - name: Collect game builds
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          bash tools/collect.sh --out _site | tee collect.tsv
+          {
+            echo "### Arcade"
+            echo
+            echo "| | Repo | |"
+            echo "|---|---|---|"
+            awk -F'\t' '{ printf "| %s | %s | %s |\n", $1, $2, $3 }' collect.tsv
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
