@@ -11,7 +11,7 @@ the browser, on desktop or phone. Served by GitHub Pages from this repo.
 3. The game's **Web release** workflow (from the studio template) builds its
    browser version and attaches `web-build.zip` to the release.
 4. This repo's **Publish arcade** workflow collects the newest release of every
-   studio game and redeploys the site — every 30 minutes, or straight away with
+   studio game and redeploys the site — every 5 minutes (only deploying when something changed), or straight away with
    **Actions → Publish arcade → Run workflow**.
 
 Releasing a new version replaces the old one on the arcade. The game's card

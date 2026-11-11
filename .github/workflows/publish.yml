@@ -8,7 +8,9 @@ name: Publish arcade
 
 on:
   schedule:
-    - cron: "*/30 * * * *"   # pick up new game releases every 30 minutes
+    # Check for new game releases every 5 minutes (GitHub can delay scheduled
+    # runs by a few minutes). A run with nothing new deploys nothing.
+    - cron: "*/5 * * * *"
   push:
     branches: [main]
   workflow_dispatch:
@@ -25,6 +27,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
@@ -49,7 +53,27 @@ jobs:
           private-key: ${{ secrets.TEMPLATE_APP_PRIVATE_KEY }}
           owner: ${{ github.repository_owner }}
 
+      - uses: actions/configure-pages@v5
+        id: pages
+
+      - name: Anything new since the live site?
+        id: check
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          LIVE: ${{ steps.pages.outputs.base_url }}
+        run: |
+          bash tools/collect.sh --state > want.txt
+          curl -fsSL "${LIVE%/}/arcade-state.txt?t=$(date +%s)" -o live.txt 2>/dev/null || : > live.txt
+          # Only the timer skips: a push (site change) or Run workflow always deploys.
+          if [ "$GITHUB_EVENT_NAME" = schedule ] && cmp -s want.txt live.txt; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No new game releases; nothing to deploy." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Collect game builds
+        if: steps.check.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
@@ -62,13 +86,14 @@ jobs:
             awk -F'\t' '{ printf "| %s | %s | %s |\n", $1, $2, $3 }' collect.tsv
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v4
+        if: steps.check.outputs.changed == 'true'
         with:
           path: _site
 
   deploy:
     needs: build
+    if: needs.build.outputs.changed == 'true'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
