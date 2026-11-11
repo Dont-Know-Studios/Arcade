@@ -104,3 +104,18 @@ body.player { height: 100vh; height: 100dvh; display: flex; flex-direction: colu
   .search { justify-content: stretch; }
   .search input { width: 100%; }
 }
+
+/* Phones. The player bar gives the game as much of the screen as it can. */
+body.player .bar {
+  padding-top: max(8px, env(safe-area-inset-top));
+  padding-left: max(12px, env(safe-area-inset-left));
+  padding-right: max(12px, env(safe-area-inset-right));
+}
+body.player { touch-action: manipulation; }
+/* A phone on its side: a thin bar, title and back button only. */
+@media (max-height: 500px) and (orientation: landscape) {
+  body.player .bar { padding-top: max(3px, env(safe-area-inset-top)); padding-bottom: 3px; gap: 8px; }
+  body.player .bar .btn { padding: 3px 10px; font-size: 13px; border-radius: 8px; }
+  body.player .now { font-size: 13px; }
+  #newtab, .now span { display: none; }
+}
