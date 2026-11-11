@@ -10,7 +10,9 @@ on:
   schedule:
     # Check for new game releases every 5 minutes (GitHub can delay scheduled
     # runs by a few minutes). A run with nothing new deploys nothing.
-    - cron: "*/5 * * * *"
+    # Minutes 3, 8, 13, … keep off the top of the hour, when GitHub is busiest
+    # and most likely to drop scheduled runs.
+    - cron: "3-58/5 * * * *"
   push:
     branches: [main]
   workflow_dispatch:
