@@ -26,10 +26,72 @@
     })
     .catch(missing);
 
+  // Fullscreen. Real fullscreen of the game's frame where the browser allows it
+  // (desktop browsers, Android). Where it does not (iPhone Safari allows it only
+  // for video; in-app browsers and embedded previews often block it) or it is
+  // refused, "full window": the bar goes and the game fills the page, with an ✕
+  // to come back (Esc too, while the arcade page has the keys: inside a game, Esc
+  // is the game's own, often pause). Either way the game gets keyboard focus afterwards,
+  // so its keys work without another click.
   var fs = document.getElementById("fs");
-  if (!document.fullscreenEnabled && !frame.webkitRequestFullscreen) fs.hidden = true;
-  fs.addEventListener("click", function () {
+  var exitBtn = document.getElementById("exit-full");
+
+  function focusGame() {
+    try { frame.focus(); frame.contentWindow.focus(); } catch (e) {}
+  }
+  function nativeEl() {
+    return document.fullscreenElement || document.webkitFullscreenElement || null;
+  }
+  function canNative() {
     var req = frame.requestFullscreen || frame.webkitRequestFullscreen;
-    if (req) req.call(frame);
+    var on = document.fullscreenEnabled || document.webkitFullscreenEnabled;
+    return !!(req && on);
+  }
+  function isFull() {
+    return !!nativeEl() || document.body.classList.contains("full-window");
+  }
+  function sync() {
+    fs.textContent = isFull() ? "Exit fullscreen" : "Fullscreen";
+  }
+  function enterWindow() {
+    document.body.classList.add("full-window");
+    exitBtn.hidden = false;
+    sync();
+    focusGame();
+  }
+  function exitWindow() {
+    document.body.classList.remove("full-window");
+    exitBtn.hidden = true;
+    sync();
+    focusGame();
+  }
+  function enter() {
+    if (!canNative()) return enterWindow();
+    var req = frame.requestFullscreen || frame.webkitRequestFullscreen;
+    var p;
+    try { p = req.call(frame); } catch (e) { return enterWindow(); }
+    if (p && p.then) {
+      p.then(focusGame, enterWindow);   // refused → full window instead
+    } else {
+      setTimeout(function () { if (nativeEl()) focusGame(); else enterWindow(); }, 300);
+    }
+  }
+  function leave() {
+    if (nativeEl()) {
+      var ex = document.exitFullscreen || document.webkitExitFullscreen;
+      if (ex) ex.call(document);
+    } else {
+      exitWindow();
+    }
+  }
+
+  fs.addEventListener("click", function () { isFull() ? leave() : enter(); });
+  exitBtn.addEventListener("click", exitWindow);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && document.body.classList.contains("full-window")) exitWindow();
   });
+  ["fullscreenchange", "webkitfullscreenchange"].forEach(function (ev) {
+    document.addEventListener(ev, function () { sync(); focusGame(); });
+  });
+  sync();
 })();
