@@ -109,7 +109,10 @@ list_repos | sort | while IFS="$US" read -r full desc private; do
         --arg notes "$notes" --argjson meta "$meta" --argjson rel "$rel" '{
       slug: $slug,
       title: (if ($meta.title // "") != "" then $meta.title else $pretty end),
-      description: (if ($meta.description // "") != "" then $meta.description else $desc end),
+      # Card text: release.description from the game, else the GitHub repo description,
+      # else the pitch from the game brief (packed into the build by its release).
+      description: (if ($meta.description // "") != "" then $meta.description
+                    elif $desc != "" then $desc else ($meta.pitch // "") end),
       version: (if ($rel.name // "") != "" then $rel.name else $rel.tag_name end),
       released: ($rel.published_at // ""),
       url: ("games/" + $slug + "/"),

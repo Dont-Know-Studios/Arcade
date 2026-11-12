@@ -15,8 +15,18 @@ the browser, on desktop or phone. Served by GitHub Pages from this repo.
    **Actions → Publish arcade → Run workflow**.
 
 Releasing a new version replaces the old one on the arcade. The game's card
-uses `project.name`, `release.description` and `release.cover` from the
-game's `project.yaml` when set, else the repo's name and GitHub description.
+fills itself in:
+
+| Card | From, first one set |
+|---|---|
+| Title | `project.name` in the game's `project.yaml`; the repo name |
+| Text | `release.description`; the repo's GitHub description; the pitch in the game's brief |
+| Cover | `release.cover`; the start screen, from the release's desktop and phone check |
+
+A renamed repo or a changed GitHub description shows on the next run (about
+5 minutes). The rest is packed into the release build, so it changes with the
+next release. Renaming a repo also changes its play link
+(`play.html?g=<repo name>`).
 
 **Everything here is public**, including builds of games whose repos are
 private: releasing a game puts it on the arcade.
