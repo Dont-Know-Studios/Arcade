@@ -6,6 +6,14 @@
   <title>Dont-Know-Studios Arcade</title>
   <meta name="description" content="Play every released Dont-Know-Studios game in your browser.">
   <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0e0f14">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
   <header class="top">
@@ -16,21 +24,28 @@
         <p class="tag">Every released game, playable in your browser.</p>
       </div>
     </div>
+    <div class="tools">
+    <button id="install" class="btn ghost" type="button" hidden>⤓ Install app</button>
     <label class="search">
       <span class="sr">Search games</span>
       <input id="q" type="search" placeholder="Search games…" autocomplete="off">
     </label>
+    </div>
   </header>
 
   <main>
+    <p id="offline-banner" class="banner" hidden>You're offline. Games saved on this device still play.</p>
     <p id="status" class="status">Loading games…</p>
     <ul id="games" class="grid" aria-live="polite"></ul>
   </main>
 
   <footer class="foot">
     <span id="updated"></span>
+    <p id="ios-hint" hidden>On iPhone or iPad: tap Share, then <strong>Add to Home Screen</strong> to install the arcade.
+      Saved games are kept on the device; iOS may clear them if the arcade goes unused for a few weeks.</p>
   </footer>
 
+  <script src="offline.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

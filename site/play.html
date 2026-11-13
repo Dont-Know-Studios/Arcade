@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Play — Dont-Know-Studios Arcade</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0e0f14">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Arcade">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body class="player">
   <header class="bar">
@@ -23,6 +31,7 @@
     <iframe id="frame" title="Game" allow="fullscreen; gamepad; autoplay; clipboard-write" allowfullscreen></iframe>
     <p id="missing" class="status" hidden>That game isn't in the arcade. <a href="./">Back to all games</a>.</p>
   </div>
+  <script src="offline.js"></script>
   <script src="play.js"></script>
 </body>
 </html>

@@ -20,11 +20,40 @@
       document.title = g.title + " — Dont-Know-Studios Arcade";
       title.textContent = g.title;
       meta.textContent = g.version || "";
-      frame.src = g.url;
-      document.getElementById("newtab").href = g.url;
-      frame.addEventListener("load", function () { try { frame.contentWindow.focus(); } catch (e) {} });
+      var Off = window.ArcadeOffline;
+      var check = Off && Off.supported ? Off.status(g) : Promise.resolve("unsupported");
+      check.then(function (state) {
+        if (!navigator.onLine && (state === "none" || state === "unsupported")) {
+          frame.hidden = true;
+          var note = document.getElementById("missing");
+          note.replaceChildren(
+            "You're offline, and " + g.title + " isn't saved on this device. Connect to the internet to play it" +
+            (state === "none" ? " (it saves itself for offline as you play). " : ". "));
+          var back = document.createElement("a"); back.href = "./"; back.textContent = "Back to all games";
+          note.appendChild(back); note.appendChild(document.createTextNode("."));
+          note.hidden = false;
+          return;
+        }
+        frame.src = g.url;
+        document.getElementById("newtab").href = g.url;
+        frame.addEventListener("load", function () {
+          try { frame.contentWindow.focus(); } catch (e) {}
+          // Played once, playable offline: save the rest of the game in the background.
+          if (state !== "saved" && navigator.onLine && Off && Off.supported) {
+            setTimeout(function () { autosave(Off, g); }, 3000);
+          }
+        }, { once: true });
+      });
     })
     .catch(missing);
+
+  function autosave(Off, g) {
+    var base = g.version || "";
+    function line(t) { meta.textContent = base ? base + " · " + t : t; }
+    Off.save(g, function (f) { line("saving for offline " + Math.round(f * 100) + "%"); })
+      .then(function () { line("saved for offline"); },
+            function () { meta.textContent = base; });
+  }
 
   // Fullscreen. Real fullscreen of the game's frame where the browser allows it
   // (desktop browsers, Android). Where it does not (iPhone Safari allows it only
