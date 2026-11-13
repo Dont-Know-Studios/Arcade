@@ -31,6 +31,28 @@ next release. Renaming a repo also changes its play link
 **Everything here is public**, including builds of games whose repos are
 private: releasing a game puts it on the arcade.
 
+## Offline play
+
+The arcade installs as an app (**Install app** in Chrome and Edge, or Share →
+**Add to Home Screen** on iPhone and iPad) and plays saved games without internet.
+
+- **Save for offline** on a game's card downloads the whole game to the device.
+  A game also saves itself in the background the first time it is played.
+- Offline, saved games play as normal; the others show **Needs internet**.
+- When a saved game gets a new release, the device downloads it the next time the
+  arcade is opened online. Until that finishes, the older saved version still plays.
+- **Remove** on the card frees the space.
+
+How it works: `site/sw.js` (a service worker) answers requests from the device's
+cache when the network can't, and `site/offline.js` does the saving. For each
+game, `collect.sh` writes `games/<slug>/arcade-files.json` (every file in the
+build, with sizes and a revision hash) and adds `rev` and `size` to `games.json`.
+A saved game is held per revision, so a new release never mixes with old files.
+
+Limits: storage is the browser's. iOS may clear saved games from an arcade that
+hasn't been opened for a few weeks, and a big game needs that much free space.
+Offline play needs HTTPS (GitHub Pages) or `localhost`.
+
 ## Setup (once)
 
 1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
@@ -49,7 +71,7 @@ private: releasing a game puts it on the arcade.
 
 | Path | What |
 |---|---|
-| `site/` | the static pages: `index.html` (game list), `play.html` (player) |
+| `site/` | the static pages: `index.html` (game list), `play.html` (player), `sw.js` + `offline.js` + `manifest.webmanifest` + `icons/` (install and offline play) |
 | `tools/collect.sh` | builds `_site/`: the pages + every game's build + `games.json` |
 | `.github/workflows/publish.yml` | collect and deploy to Pages |
 

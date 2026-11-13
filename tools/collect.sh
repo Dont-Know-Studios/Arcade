@@ -98,6 +98,16 @@ list_repos | sort | while IFS="$US" read -r full desc private; do
     rm -rf "$dest"; printf 'skipped\t%s\t%s web-build.zip has no index.html at its top\n' "$full" "$tag"; continue
   fi
 
+  # Offline play: the build's file list (path, bytes) and a revision that changes
+  # whenever any file does. The site's "Save for offline" downloads every file on
+  # the list; a new revision tells saved copies to update.
+  rm -f "$dest/arcade-files.json"
+  ( cd "$dest" && find . -type f -printf '%P\t%s\n' | LC_ALL=C sort ) > "$WORK/$slug.files"
+  rev=$( cd "$dest" && find . -type f -printf '%P\0' | LC_ALL=C sort -z | xargs -0 -r sha256sum | sha256sum | cut -c1-16 )
+  jq -Rn --arg rev "$rev" '[inputs | split("\t") | [.[0], (.[1] | tonumber)]]
+      | {rev: $rev, size: (map(.[1]) | add // 0), files: .}' "$WORK/$slug.files" > "$dest/arcade-files.json"
+  size=$(jq '.size' "$dest/arcade-files.json")
+
   meta='{}'; [ -f "$dest/arcade.json" ] && meta=$(jq -c . "$dest/arcade.json" 2>/dev/null || echo '{}')
   cover=""
   for c in "$dest"/arcade-cover.*; do [ -f "$c" ] && cover="games/$slug/${c##*/}"; done
@@ -106,7 +116,8 @@ list_repos | sort | while IFS="$US" read -r full desc private; do
   pretty=$(printf '%s' "$name" | sed -E 's/[-_]+/ /g')
 
   jq -nc --arg slug "$slug" --arg pretty "$pretty" --arg desc "$desc" --arg cover "$cover" \
-        --arg notes "$notes" --argjson meta "$meta" --argjson rel "$rel" '{
+        --arg notes "$notes" --arg rev "$rev" --argjson size "$size" \
+        --argjson meta "$meta" --argjson rel "$rel" '{
       slug: $slug,
       title: (if ($meta.title // "") != "" then $meta.title else $pretty end),
       # Card text: release.description from the game, else the GitHub repo description,
@@ -117,7 +128,9 @@ list_repos | sort | while IFS="$US" read -r full desc private; do
       released: ($rel.published_at // ""),
       url: ("games/" + $slug + "/"),
       cover: (if $cover != "" then $cover else null end),
-      notes: (if $notes != "" then $notes else null end)
+      notes: (if $notes != "" then $notes else null end),
+      rev: $rev,
+      size: $size
     }' >> "$WORK/games.jsonl"
   printf 'added\t%s\t%s\n' "$full" "$tag"
 done
