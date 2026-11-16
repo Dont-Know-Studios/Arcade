@@ -14,7 +14,9 @@ the browser, on desktop or phone. Served by GitHub Pages from this repo.
    studio game and redeploys the site — every 5 minutes (only deploying when something changed), or straight away with
    **Actions → Publish arcade → Run workflow**.
 
-Releasing a new version replaces the old one on the arcade. The game's card
+Releasing a new version replaces the old one on the arcade, once its
+`web-build.zip` is attached: until then (or if the game's build fails) the arcade
+keeps showing the release before it. Pre-releases and drafts are ignored. The game's card
 fills itself in:
 
 | Card | From, first one set |
@@ -30,6 +32,15 @@ next release. Renaming a repo also changes its play link
 
 **Everything here is public**, including builds of games whose repos are
 private: releasing a game puts it on the arcade.
+
+## Safety: the arcade never loses a game by accident
+
+- Every GitHub API call and download is retried. If one still fails, the run
+  stops with an error and the live site stays as it was; the next run (5 minutes
+  later) tries again.
+- A run that would list **fewer games than the live site** doesn't deploy. To
+  retire or rename a game on purpose: **Actions → Publish arcade → Run workflow**
+  with **force** ticked.
 
 ## Offline play
 
@@ -73,7 +84,11 @@ Offline play needs HTTPS (GitHub Pages) or `localhost`.
 |---|---|
 | `site/` | the static pages: `index.html` (game list), `play.html` (player), `sw.js` + `offline.js` + `manifest.webmanifest` + `icons/` (install and offline play) |
 | `tools/collect.sh` | builds `_site/`: the pages + every game's build + `games.json` |
+| `tools/test-collect.sh` | checks `collect.sh` against made-up games (also run on every pull request) |
 | `.github/workflows/publish.yml` | collect and deploy to Pages |
+| `.github/workflows/test.yml` | runs `tools/test-collect.sh` on pull requests |
 
-Test locally without GitHub: `bash tools/collect.sh --local <fixtures>` (see
-the script's header), then `python3 -m http.server -d _site`.
+Test locally without GitHub: `bash tools/test-collect.sh` checks `collect.sh`
+against made-up games (`--keep _site` also builds a site from them), and
+`bash tools/collect.sh --local <fixtures>` builds from your own (see the
+script's header). Then `python3 -m http.server -d _site`.
