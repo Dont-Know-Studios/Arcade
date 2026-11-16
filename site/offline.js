@@ -121,7 +121,8 @@
       var updating = [];
       copies.forEach(function (c) {
         var g = bySlug[c.slug];
-        if (!g) return caches.delete(c.name);
+        // Gone from the arcade, or now a download only (no web build to keep).
+        if (!g || !g.rev) return caches.delete(c.name);
         if (c.complete && c.rev !== g.rev && updating.indexOf(g.slug) === -1) updating.push(g.slug);
         // A half copy of an old build serves nothing useful.
         if (!c.complete && c.rev !== g.rev) caches.delete(c.name);

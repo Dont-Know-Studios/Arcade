@@ -16,7 +16,7 @@
 
 var SHELL = "arcade-shell";
 var SHELL_FILES = [
-  "./", "index.html", "play.html", "style.css", "app.js", "play.js", "offline.js",
+  "./", "index.html", "play.html", "style.css", "app.js", "play.js", "offline.js", "downloads.js",
   "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png",
   "icons/maskable-512.png", "icons/apple-touch-icon.png", "games.json"
 ];

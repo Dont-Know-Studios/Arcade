@@ -6,6 +6,7 @@
   var q = document.getElementById("q");
   var games = [];
   var Off = window.ArcadeOffline;
+  var Dl = window.ArcadeDownloads;
   var progress = {};   // slug → fraction saved, while saving
   var live = {};       // slug → redraw of the card on screen (cards are rebuilt on search)
 
@@ -48,19 +49,33 @@
     if (g.description) body.appendChild(el("p", null, g.description));
     var bits = [g.version, when(g.released)].filter(Boolean).join(" · ");
     if (bits) body.appendChild(el("div", "meta", bits));
+    var tags = Dl ? Dl.badges(g) : [];
+    if (tags.length) {
+      var tagRow = el("div", "tags");
+      tags.forEach(function (t) { tagRow.appendChild(t); });
+      body.appendChild(tagRow);
+    }
 
     var row = el("div", "row");
-    var play = el("a", "btn play", "▶ Play");
-    play.href = "play.html?g=" + encodeURIComponent(g.slug);
-    play.setAttribute("aria-label", "Play " + g.title);
-    row.appendChild(play);
+    // A desktop-only game has no browser build (url null): no Play button.
+    var play = null;
+    if (g.url) {
+      play = el("a", "btn play", "▶ Play");
+      play.href = "play.html?g=" + encodeURIComponent(g.slug);
+      play.setAttribute("aria-label", "Play " + g.title);
+      row.appendChild(play);
+    }
+    if (Dl) Dl.buttons(g).forEach(function (b) { row.appendChild(b); });
     if (g.notes) {
       var notes = el("a", "btn ghost", "Notes");
       notes.href = g.notes; notes.target = "_blank"; notes.rel = "noopener";
       row.appendChild(notes);
     }
     body.appendChild(row);
-    if (Off && Off.supported && g.rev) {
+    var dlNote = Dl && Dl.note(g);
+    if (dlNote) body.appendChild(dlNote);
+    // Save for offline: browser games only.
+    if (play && Off && Off.supported && g.rev) {
       var save = el("div", "offline");
       body.appendChild(save);
       offlineControls(g, li, save, play);

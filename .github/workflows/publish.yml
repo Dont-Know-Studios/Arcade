@@ -23,7 +23,8 @@ on:
         default: false
 
 permissions:
-  contents: read
+  # write: tools/mirror.sh publishes desktop builds as releases on this repo.
+  contents: write
   pages: write
   id-token: write
 
@@ -91,7 +92,7 @@ jobs:
           # hiccup can't drop a game. Run workflow → force overrides it.
           live=$(curl -fsSL "${LIVE%/}/games.json?t=$(date +%s)" | jq '.games | length') || live=0
           echo "The live site lists ${live:-0} game(s)."
-          bash tools/collect.sh --out _site --min-games "${live:-0}" $FORCE | tee collect.tsv
+          bash tools/collect.sh --out _site --mirror mirror.tsv --min-games "${live:-0}" $FORCE | tee collect.tsv
           {
             echo "### Arcade"
             echo
@@ -99,6 +100,20 @@ jobs:
             echo "|---|---|---|---|"
             awk -F'\t' '{ printf "| %s | %s | %s | %s |\n", $1, $2, $3, $4 }' collect.tsv
           } >> "$GITHUB_STEP_SUMMARY"
+
+      # Desktop builds of (possibly private) game repos become public release
+      # assets here; the site links to them and never holds the binaries.
+      - name: Mirror desktop builds
+        if: steps.check.outputs.changed == 'true'
+        env:
+          SRC_TOKEN: ${{ steps.app-token.outputs.token }}
+          DEST_TOKEN: ${{ github.token }}
+          ARCADE_REPO: ${{ github.repository }}
+        run: bash tools/mirror.sh mirror.tsv _site
+
+      # Later: push desktop builds to itch.io too. tools/mirror.sh has a
+      # push_itch hook; it would need ITCH_API_KEY: ${{ secrets.ITCH_API_KEY }}
+      # in the step above (README.md, "itch.io").
 
       - uses: actions/upload-pages-artifact@v4
         if: steps.check.outputs.changed == 'true'

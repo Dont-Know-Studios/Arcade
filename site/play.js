@@ -20,6 +20,8 @@
       document.title = g.title + " — Dont-Know-Studios Arcade";
       title.textContent = g.title;
       meta.textContent = g.version || "";
+      // A download-only (desktop) game has no browser build to put in the frame.
+      if (!g.url) return downloadOnly(g);
       var Off = window.ArcadeOffline;
       var check = Off && Off.supported ? Off.status(g) : Promise.resolve("unsupported");
       check.then(function (state) {
@@ -46,6 +48,40 @@
       });
     })
     .catch(missing);
+
+  function downloadOnly(g) {
+    var Dl = window.ArcadeDownloads;
+    frame.hidden = true;
+    frame.removeAttribute("src");
+    document.getElementById("newtab").hidden = true;
+    document.getElementById("fs").hidden = true;
+    var box = document.getElementById("download");
+    box.replaceChildren();
+    if (g.cover) {
+      var img = document.createElement("img");
+      img.className = "dl-cover"; img.alt = ""; img.src = g.cover;
+      box.appendChild(img);
+    }
+    var h = document.createElement("h2"); h.textContent = g.title; box.appendChild(h);
+    var p = document.createElement("p");
+    p.textContent = "This game is a download: it runs on your computer, not in the browser.";
+    box.appendChild(p);
+    if (g.description) { var d = document.createElement("p"); d.className = "muted"; d.textContent = g.description; box.appendChild(d); }
+    var row = document.createElement("div"); row.className = "row";
+    var any = false;
+    if (Dl) Dl.buttons(g, { main: true }).forEach(function (b) { row.appendChild(b); any = true; });
+    var back = document.createElement("a"); back.className = "btn ghost"; back.href = "./"; back.textContent = "Back to all games";
+    row.appendChild(back);
+    box.appendChild(row);
+    if (!any) {
+      var none = document.createElement("p"); none.className = "muted";
+      none.textContent = "No download is available for it right now.";
+      box.insertBefore(none, row);
+    }
+    var n = Dl && Dl.note(g);
+    if (n) box.appendChild(n);
+    box.hidden = false;
+  }
 
   function autosave(Off, g) {
     var base = g.version || "";
