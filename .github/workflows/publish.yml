@@ -16,6 +16,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      force:
+        description: "Deploy even if the arcade would list fewer games than the live site (a game was retired or renamed on purpose)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -78,14 +83,21 @@ jobs:
         if: steps.check.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          LIVE: ${{ steps.pages.outputs.base_url }}
+          FORCE: ${{ inputs.force && '--force' || '' }}
         run: |
-          bash tools/collect.sh --out _site | tee collect.tsv
+          set -o pipefail   # a failed collect must fail the step, not hide behind tee
+          # Never deploy fewer games than the live site lists, so a GitHub
+          # hiccup can't drop a game. Run workflow → force overrides it.
+          live=$(curl -fsSL "${LIVE%/}/games.json?t=$(date +%s)" | jq '.games | length') || live=0
+          echo "The live site lists ${live:-0} game(s)."
+          bash tools/collect.sh --out _site --min-games "${live:-0}" $FORCE | tee collect.tsv
           {
             echo "### Arcade"
             echo
-            echo "| | Repo | |"
-            echo "|---|---|---|"
-            awk -F'\t' '{ printf "| %s | %s | %s |\n", $1, $2, $3 }' collect.tsv
+            echo "| | Repo | | |"
+            echo "|---|---|---|---|"
+            awk -F'\t' '{ printf "| %s | %s | %s | %s |\n", $1, $2, $3, $4 }' collect.tsv
           } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/upload-pages-artifact@v4

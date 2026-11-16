@@ -1,0 +1,20 @@
+# Check tools/collect.sh against made-up games (tools/test-collect.sh) on every
+# pull request, before it can reach the live arcade.
+name: Test collect
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - run: bash tools/test-collect.sh
