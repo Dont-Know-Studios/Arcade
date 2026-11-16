@@ -18,3 +18,4 @@ jobs:
         with:
           persist-credentials: false
       - run: bash tools/test-collect.sh
+      - run: bash tools/test-mirror.sh

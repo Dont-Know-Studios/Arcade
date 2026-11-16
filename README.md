@@ -1,37 +1,84 @@
 # Dont-Know-Studios Arcade
 
-The studio's game launcher: every released Dont-Know-Studios game, playable in
-the browser, on desktop or phone. Served by GitHub Pages from this repo.
+The studio's game launcher: every released Dont-Know-Studios game, played in
+the browser (desktop or phone) or downloaded for Windows. Served by GitHub
+Pages from this repo.
 
 ## How a game gets here
 
 1. The game repo has the `studio-game` topic (`/new-game` sets it up).
 2. You publish a **GitHub Release** in the game repo (a full release, not a
    draft or pre-release).
-3. The game's **Web release** workflow (from the studio template) builds its
-   browser version and attaches `web-build.zip` to the release.
+3. The game's release workflows (from the studio template) build it and attach
+   the assets below to the release.
 4. This repo's **Publish arcade** workflow collects the newest release of every
-   studio game and redeploys the site — every 5 minutes (only deploying when something changed), or straight away with
-   **Actions → Publish arcade → Run workflow**.
+   studio game and redeploys the site — every 5 minutes (only deploying when
+   something changed), or straight away with **Actions → Publish arcade → Run
+   workflow**.
 
-Releasing a new version replaces the old one on the arcade, once its
-`web-build.zip` is attached: until then (or if the game's build fails) the arcade
-keeps showing the release before it. Pre-releases and drafts are ignored. The game's card
-fills itself in:
+Releasing a new version replaces the old one on the arcade once a build is
+attached: until then (or if the game's build fails) the arcade keeps showing the
+release before it. Pre-releases and drafts are ignored.
+
+### Release assets the arcade reads
+
+| Asset | What the arcade does with it |
+|---|---|
+| `web-build.zip` | the browser build (`index.html` at its top): unpacked into the site, **▶ Play** |
+| `windows-build.zip` | the Windows build: copied into a public release on this repo, **Download for Windows** |
+| `windows-build.zip.sha256` | its checksum, shown on the card (else GitHub's digest, else worked out when copied) |
+| `arcade.json` | the card: `{title, description, pitch, profiles, links: {itch, steam}}` |
+| `arcade-cover.png` / `.jpg` / `.webp` | the card's cover |
+
+A release needs `web-build.zip` or `windows-build.zip` (or both) to be listed.
+Older games pack `arcade.json` and `arcade-cover.*` inside `web-build.zip`; the
+standalone release assets win when both exist. Any change to any of these assets
+(a re-upload too) triggers a deploy.
+
+### What the card shows
 
 | Card | From, first one set |
 |---|---|
-| Title | `project.name` in the game's `project.yaml`; the repo name |
-| Text | `release.description`; the repo's GitHub description; the pitch in the game's brief |
-| Cover | `release.cover`; the start screen, from the release's desktop and phone check |
+| Title | `title` in `arcade.json` (`project.name` in the game's `project.yaml`); the repo name |
+| Text | `description` in `arcade.json` (`release.description`); the repo's GitHub description; the `pitch` (from the game's brief) |
+| Cover | `arcade-cover.*` (`release.cover`, or the start screen from the release's desktop and phone check) |
+| Badges | `profiles` in `arcade.json`: `browser` → *Keyboard and mouse*, `browser-mobile` → *Works on phones*, `desktop` → *Windows*. No `profiles`: `browser-mobile` for a web build, plus `desktop` for a Windows build |
+| Buttons | **▶ Play** (web build), **Download for Windows (size)** (Windows build), **Get it on itch.io** / **Get it on Steam** (`links.itch` / `links.steam`, `https://` only) |
+
+The badge matching the visitor's device is highlighted, and the download button
+is the main one on Windows. **Save for offline** is for browser games only. A
+download-only game's play link (`play.html?g=<repo name>`) shows its download
+page instead of a game.
 
 A renamed repo or a changed GitHub description shows on the next run (about
-5 minutes). The rest is packed into the release build, so it changes with the
-next release. Renaming a repo also changes its play link
-(`play.html?g=<repo name>`).
+5 minutes). The rest comes with the next release. Renaming a repo also changes
+its play link.
+
+### Downloads
+
+Windows builds never go on the Pages site. **Publish arcade** copies each one
+(`tools/mirror.sh`) into a release on this repo, tagged `<game>-<version>`, as
+`<Repo>-<version>-windows.zip` with a `.sha256` beside it, and the card links
+there. It copies a build once (a release with the same source, size and upload
+time is left alone), checks it against the game's checksum, and keeps each
+game's current and previous copy, deleting older ones. These releases are made
+by the workflow's own `GITHUB_TOKEN` (`contents: write`) and are marked
+`arcade-mirror: <game>`; it touches no other release.
+
+**The builds aren't code-signed**, so Windows SmartScreen warns on first run.
+The card says so ("Windows may warn: More info → Run anyway") and lists the
+SHA-256 for anyone who wants to check the file.
 
 **Everything here is public**, including builds of games whose repos are
-private: releasing a game puts it on the arcade.
+private: releasing a game puts its browser build on the site and its **Windows
+build in a public release of this repo**, downloadable by anyone.
+
+### itch.io (later)
+
+Not set up. When it is, `push_itch` in `tools/mirror.sh` would run butler for
+each copied build, with one itch.io API key in this repo's secrets
+(`ITCH_API_KEY`) and the game's itch page from `links.itch` in `arcade.json`;
+`publish.yml` marks where the key goes.
 
 ## Safety: the arcade never loses a game by accident
 
@@ -82,11 +129,12 @@ Offline play needs HTTPS (GitHub Pages) or `localhost`.
 
 | Path | What |
 |---|---|
-| `site/` | the static pages: `index.html` (game list), `play.html` (player), `sw.js` + `offline.js` + `manifest.webmanifest` + `icons/` (install and offline play) |
+| `site/` | the static pages: `index.html` (game list), `play.html` (player), `downloads.js` (download buttons), `sw.js` + `offline.js` + `manifest.webmanifest` + `icons/` (install and offline play) |
 | `tools/collect.sh` | builds `_site/`: the pages + every game's build + `games.json` |
-| `tools/test-collect.sh` | checks `collect.sh` against made-up games (also run on every pull request) |
-| `.github/workflows/publish.yml` | collect and deploy to Pages |
-| `.github/workflows/test.yml` | runs `tools/test-collect.sh` on pull requests |
+| `tools/mirror.sh` | copies Windows builds into public releases on this repo |
+| `tools/test-collect.sh`, `tools/test-mirror.sh` | check `collect.sh` and `mirror.sh` against made-up games and a stand-in `gh` (also run on every pull request) |
+| `.github/workflows/publish.yml` | collect, copy Windows builds, deploy to Pages |
+| `.github/workflows/test.yml` | runs the two test scripts on pull requests |
 
 Test locally without GitHub: `bash tools/test-collect.sh` checks `collect.sh`
 against made-up games (`--keep _site` also builds a site from them), and
