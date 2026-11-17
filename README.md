@@ -12,9 +12,10 @@ Pages from this repo.
 3. The game's release workflows (from the studio template) build it and attach
    the assets below to the release.
 4. This repo's **Publish arcade** workflow collects the newest release of every
-   studio game and redeploys the site — every 5 minutes (only deploying when
-   something changed), or straight away with **Actions → Publish arcade → Run
-   workflow**.
+   studio game and redeploys the site — once a day at midnight UTC (only
+   deploying when something changed), or straight away with **Actions →
+   Publish arcade → Run workflow**. Changes to this repo (pushes to `main`)
+   also go live with the next run, not on push.
 
 Releasing a new version replaces the old one on the arcade once a build is
 attached: until then (or if the game's build fails) the arcade keeps showing the
@@ -50,8 +51,8 @@ is the main one on Windows. **Save for offline** is for browser games only. A
 download-only game's play link (`play.html?g=<repo name>`) shows its download
 page instead of a game.
 
-A renamed repo or a changed GitHub description shows on the next run (about
-5 minutes). The rest comes with the next release. Renaming a repo also changes
+A renamed repo or a changed GitHub description shows on the next run (the
+nightly one, or Run workflow). The rest comes with the next release. Renaming a repo also changes
 its play link.
 
 ### Downloads
@@ -83,8 +84,8 @@ each copied build, with one itch.io API key in this repo's secrets
 ## Safety: the arcade never loses a game by accident
 
 - Every GitHub API call and download is retried. If one still fails, the run
-  stops with an error and the live site stays as it was; the next run (5 minutes
-  later) tries again.
+  stops with an error and the live site stays as it was; the next run (the
+  following midnight, or Run workflow) tries again.
 - A run that would list **fewer games than the live site** doesn't deploy. To
   retire or rename a game on purpose: **Actions → Publish arcade → Run workflow**
   with **force** ticked.
