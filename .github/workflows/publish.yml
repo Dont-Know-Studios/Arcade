@@ -8,13 +8,11 @@ name: Publish arcade
 
 on:
   schedule:
-    # Check for new game releases every 5 minutes (GitHub can delay scheduled
-    # runs by a few minutes). A run with nothing new deploys nothing.
-    # Minutes 3, 8, 13, … keep off the top of the hour, when GitHub is busiest
-    # and most likely to drop scheduled runs.
-    - cron: "3-58/5 * * * *"
-  push:
-    branches: [main]
+    # Check for new game releases once a day at midnight (UTC), so each day's
+    # releases are live by the next morning. A run with nothing new deploys
+    # nothing. GitHub can delay scheduled runs, most of all around midnight.
+    # Need it sooner? Actions → Publish arcade → Run workflow.
+    - cron: "0 0 * * *"
   workflow_dispatch:
     inputs:
       force:
@@ -72,7 +70,7 @@ jobs:
         run: |
           bash tools/collect.sh --state > want.txt
           curl -fsSL "${LIVE%/}/arcade-state.txt?t=$(date +%s)" -o live.txt 2>/dev/null || : > live.txt
-          # Only the timer skips: a push (site change) or Run workflow always deploys.
+          # Only the timer skips: Run workflow always deploys.
           if [ "$GITHUB_EVENT_NAME" = schedule ] && cmp -s want.txt live.txt; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No new game releases; nothing to deploy." >> "$GITHUB_STEP_SUMMARY"
